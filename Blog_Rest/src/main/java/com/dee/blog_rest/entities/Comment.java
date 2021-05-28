@@ -26,12 +26,15 @@ public class Comment extends DateAudit {
     private String body;
     @Column
     private int total_likes;
+    @Column
+    private String createdBy;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
 
+    @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL)
     private List<CommentLike> commentLike;
 

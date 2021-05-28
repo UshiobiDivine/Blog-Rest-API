@@ -5,20 +5,17 @@ import com.dee.blog_rest.exceptions.BadRequestException;
 import com.dee.blog_rest.repositories.UserRepository;
 import com.dee.blog_rest.requests_and_responses.ApiResponse;
 import com.dee.blog_rest.requests_and_responses.SignUpRequest;
+import com.dee.blog_rest.requests_and_responses.UpdateUserRequest;
 import com.dee.blog_rest.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
+
+
 
 @Service
 public class UserServiceImplementation implements UserService {
@@ -65,7 +62,6 @@ public class UserServiceImplementation implements UserService {
 //        return false;
 //    }
 
-
     @Override
     public User saveUser(SignUpRequest signUpRequest) {
         User user = new User();
@@ -87,7 +83,12 @@ public class UserServiceImplementation implements UserService {
     }
 
     public  User findById(Long id){
-        return userRepository.findById(id).get();
+        Optional<User> byId = userRepository.findById(id);
+        if (byId.isPresent()){
+            return byId.get();
+        }
+        throw new BadRequestException(
+                "User not found", new Throwable("Invalid user id"));
     }
 
     @Override
@@ -97,28 +98,21 @@ public class UserServiceImplementation implements UserService {
 
     @Transactional
     @Override
-    public void updateUser(Long userId,
-                           String email,
-                           String firstName,
-                           String lastName,
-                           String password) {
+    public void updateUser(Long userId, UpdateUserRequest updateUserRequest) {
         User user = userRepository.findById(userId).orElseThrow(()->
                 new IllegalStateException("Student with id " + userId + " does not exist"));
-        if (firstName!=null&&firstName.length()>0&& !Objects.equals(user.getFirstName(), firstName)){
-            user.setFirstName(firstName);
-        }
-        if (lastName!=null&&lastName.length()>0&& !Objects.equals(user.getLastName(), lastName)){
-            user.setLastName(lastName);
-        }
-        if (password!=null&&password.length()>0&& !Objects.equals(user.getPassword(), password)){
-            user.setPassword(firstName);
-        }
 
-        User user1 = userRepository.findByEmail(email);
+
+        User user1 = userRepository.findByEmail(updateUserRequest.getEmail());
         if (Optional.ofNullable(user1).isPresent()){
             throw new IllegalStateException("email taken");
         }
-        user.setEmail(email);
+        user.setEmail(updateUserRequest.getEmail());
+        user.setUpdatedAt(Instant.now());
+        user.setPassword(updateUserRequest.getPassword());
+        user.setFirstName(updateUserRequest.getFirstName());
+        user.setLastName(updateUserRequest.getLastName());
+
         System.out.println("USER UPDATED SUCCESSFULLY");
     }
 
@@ -134,5 +128,12 @@ public class UserServiceImplementation implements UserService {
     @Override
     public User findByMail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    @Override
+    public boolean deleteUser(Long userId) {
+        User user = userRepository.findById(userId).get();
+        userRepository.delete(user);
+        return true;
     }
 }

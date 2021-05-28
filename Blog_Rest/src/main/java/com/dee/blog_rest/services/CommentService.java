@@ -1,11 +1,22 @@
 package com.dee.blog_rest.services;
 
+import com.dee.blog_rest.asecurity2.UserPrincipal;
 import com.dee.blog_rest.entities.Comment;
+import com.dee.blog_rest.requests_and_responses.ApiResponse;
 import com.dee.blog_rest.requests_and_responses.CommentRequest;
-import com.dee.blog_rest.requests_and_responses.PostRequest;
-import com.dee.blog_rest.requests_and_responses.PostResponse;
-import com.dee.blog_rest.security.AuthenticationUserDetailService;
+import com.dee.blog_rest.requests_and_responses.PagedResponse;
+
+import java.util.List;
 
 public interface CommentService {
-    Comment addComment(CommentRequest commentRequest, Long userId, Long postId, AuthenticationUserDetailService currentUser);
+
+    PagedResponse<Comment> getAllComments(Long postId, int page, int size);
+
+    Comment addComment(CommentRequest commentRequest, Long postId, UserPrincipal currentUser);
+
+    Comment getComment(Long postId, Long id);
+
+    Comment updateComment(Long postId, Long id, CommentRequest commentRequest, UserPrincipal currentUser);
+
+    ApiResponse deleteComment(Long postId, Long id, UserPrincipal currentUser);
 }

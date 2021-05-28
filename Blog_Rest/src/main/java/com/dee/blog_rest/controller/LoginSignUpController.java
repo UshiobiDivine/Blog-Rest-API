@@ -6,17 +6,14 @@ import com.dee.blog_rest.requests_and_responses.SignUpRequest;
 import com.dee.blog_rest.services.serviceImplementation.UserServiceImplementation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
 import java.net.URI;
 import java.util.logging.Logger;
 
@@ -32,7 +29,7 @@ public class LoginSignUpController {
 
 //    consumes = {MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE}
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse> save(@RequestBody() SignUpRequest signUpRequest){
+    public ResponseEntity<ApiResponse> signup(@RequestBody() SignUpRequest signUpRequest){
 
         User user = userServiceImplementation.saveUser(signUpRequest);
 
@@ -73,7 +70,5 @@ public class LoginSignUpController {
 //        "usernameOrEmail": "Dave@gmail.com",
 //            "password":1234567
 //    }
-
-
 
 }

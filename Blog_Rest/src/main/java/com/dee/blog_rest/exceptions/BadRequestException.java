@@ -13,7 +13,7 @@ public class BadRequestException extends RuntimeException {
 	private String message;
 
 	public BadRequestException(ApiResponse apiResponse) {
-		super();
+//		super();super
 		this.apiResponse = apiResponse;
 	}
 
