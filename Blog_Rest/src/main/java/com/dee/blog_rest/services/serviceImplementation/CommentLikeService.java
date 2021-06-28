@@ -1,6 +1,6 @@
 package com.dee.blog_rest.services.serviceImplementation;
 
-import com.dee.blog_rest.asecurity2.UserPrincipal;
+import com.dee.blog_rest.security.UserPrincipal;
 import com.dee.blog_rest.entities.*;
 import com.dee.blog_rest.repositories.CommentLikeRepository;
 import com.dee.blog_rest.repositories.CommentRepository;
@@ -29,36 +29,40 @@ public class CommentLikeService {
         this.commentLikeRepository = commentLikeRepository;
     }
 
-    public ApiResponse likeComment(Long commentId, UserPrincipal currentUser){
-        if (commentId!=null){
 
-            Optional<Comment> byId = commentRepository.findById(commentId);
+    public ApiResponse likeComment(Long commentId, UserPrincipal currentUser) {
+
+        Optional<Comment> byId = commentRepository.findById(commentId);
+        if (byId.isPresent()) {
+
             User user = userServiceImplementation.findById(currentUser.getId());
 
             CommentLike commentLikebyUser = commentLikeRepository.findByUser_Id(currentUser.getId());
-            if (commentLikebyUser==null){
+            if (commentLikebyUser == null) {
                 CommentLike commentLike = new CommentLike();
                 commentLike.setComment(byId.get());
                 commentLike.setUser(user);
+                commentLikeRepository.save(commentLike);
+
+                int size = commentLikeRepository.findAllByComment_Id(byId.get().getId()).size();
+                System.out.println("TOTAL COMMENT LIKES IS "+size);
+                byId.get().setTotal_likes(size);
+                commentRepository.save(byId.get());
+
+                return new ApiResponse(Boolean.TRUE, "Comment Liked");
+            } else if (commentLikebyUser != null) {
+                if (byId.get().equals(commentLikebyUser.getComment())) {
+                    commentLikeRepository.delete(commentLikebyUser);
+                    int size = commentLikeRepository.findAllByComment_Id(byId.get().getId()).size();
+                    System.out.println("TOTAL COMMENT LIKES IS "+size);
+                    byId.get().setTotal_likes(size);
+                    commentRepository.save(byId.get());
+                    return new ApiResponse(Boolean.TRUE, "Comment Unliked");
+                }
             }
-
-//            if (postLike1==null){
-//                PostLike postLike = new PostLike();
-//                postLike.setPost(post);
-//                postLike.setUser(byId);
-//                commentService.save(postLike);
-//                return new ApiResponse(Boolean.TRUE, "Post Liked");
-//            }else if (postLike1!=null){
-//                Post post1 = postLike1.getPost();
-//                if (post1==post) {
-//                    commentService.delete(postLike1);
-//                    return new ApiResponse(Boolean.TRUE, "Post Unliked");
-//                }
-//            }
-
-
         }
-        return new ApiResponse(Boolean.FALSE, "Could not like post");
+
+        return new ApiResponse(Boolean.FALSE, "Could not like comment");
     }
 
 }

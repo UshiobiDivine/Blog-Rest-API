@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PostRepository222 extends JpaRepository<Post, Long> {
+public interface PostRepository extends JpaRepository<Post, Long> {
 	Page<Post> findByCreatedBy(Long userId, Pageable pageable);
 
 //	Page<Post> findByCategory(Long categoryId, Pageable pageable);

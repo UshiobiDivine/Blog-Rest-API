@@ -1,6 +1,6 @@
 package com.dee.blog_rest.controller;
 
-import com.dee.blog_rest.asecurity2.JwtTokenProvider;
+import com.dee.blog_rest.security.JwtTokenProvider;
 import com.dee.blog_rest.entities.User;
 import com.dee.blog_rest.entities.role.Role;
 import com.dee.blog_rest.entities.role.RoleName;
@@ -65,17 +65,15 @@ public class AuthController {
 
 	@PostMapping("/signup")
 	public ResponseEntity<ApiResponse> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
+
 		User byEmail = userRepository.findByEmail(signUpRequest.getEmail());
 		if (byEmail !=null){
 			throw new BlogapiException(HttpStatus.BAD_REQUEST, "Email is already taken");
 		}
 
 		String firstName = signUpRequest.getFirstName().toLowerCase();
-
 		String lastName = signUpRequest.getLastName().toLowerCase();
-
 		String email = signUpRequest.getEmail().toLowerCase();
-
 		String password = passwordEncoder.encode(signUpRequest.getPassword());
 
 		User user = new User(firstName, lastName, email, password);

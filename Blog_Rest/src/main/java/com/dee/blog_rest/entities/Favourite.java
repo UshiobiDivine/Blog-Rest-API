@@ -19,7 +19,4 @@ public class Favourite {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-//    @ManyToOne
-//    @JoinColumn(name = "user_id")
-//    private User user;
 }

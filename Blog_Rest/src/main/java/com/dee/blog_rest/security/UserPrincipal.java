@@ -1,4 +1,4 @@
-package com.dee.blog_rest.asecurity2;
+package com.dee.blog_rest.security;
 
 import com.dee.blog_rest.entities.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;

@@ -1,6 +1,6 @@
 package com.dee.blog_rest.services.serviceImplementation;
 
-import com.dee.blog_rest.asecurity2.UserPrincipal;
+import com.dee.blog_rest.security.UserPrincipal;
 import com.dee.blog_rest.entities.User;
 import com.dee.blog_rest.repositories.UserRepository;
 import com.dee.blog_rest.services.CustomUserDetailsService;

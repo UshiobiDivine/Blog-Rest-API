@@ -1,12 +1,10 @@
 package com.dee.blog_rest.services;
 
-import com.dee.blog_rest.asecurity2.UserPrincipal;
+import com.dee.blog_rest.security.UserPrincipal;
 import com.dee.blog_rest.entities.Comment;
 import com.dee.blog_rest.requests_and_responses.ApiResponse;
 import com.dee.blog_rest.requests_and_responses.CommentRequest;
 import com.dee.blog_rest.requests_and_responses.PagedResponse;
-
-import java.util.List;
 
 public interface CommentService {
 

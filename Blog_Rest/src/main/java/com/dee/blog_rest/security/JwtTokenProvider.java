@@ -1,4 +1,4 @@
-package com.dee.blog_rest.asecurity2;
+package com.dee.blog_rest.security;
 
 import io.jsonwebtoken.*;
 import org.slf4j.Logger;

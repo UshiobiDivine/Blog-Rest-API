@@ -1,39 +1,48 @@
 package com.dee.blog_rest.services.serviceImplementation;
 
-import com.dee.blog_rest.asecurity2.UserPrincipal;
+import com.dee.blog_rest.exceptions.AppException;
+import com.dee.blog_rest.security.UserPrincipal;
 import com.dee.blog_rest.entities.Post;
 import com.dee.blog_rest.entities.User;
 import com.dee.blog_rest.entities.role.RoleName;
 import com.dee.blog_rest.exceptions.BadRequestException;
 import com.dee.blog_rest.exceptions.UnauthorizedException;
-import com.dee.blog_rest.repositories.PostRepository222;
+import com.dee.blog_rest.repositories.PostRepository;
 import com.dee.blog_rest.repositories.UserRepository;
 import com.dee.blog_rest.requests_and_responses.ApiResponse;
 import com.dee.blog_rest.requests_and_responses.PagedResponse;
 import com.dee.blog_rest.requests_and_responses.PostRequest;
 import com.dee.blog_rest.requests_and_responses.PostResponse;
-import com.dee.blog_rest.services.PostService222;
+import com.dee.blog_rest.services.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
-public class PostServiceImpl implements PostService222 {
+public class PostServiceImpl implements PostService {
 	@Autowired
-	private PostRepository222 postRepository;
+	private PostRepository postRepository;
 
 	@Autowired
 	private UserRepository userRepository;
+
+	@Autowired
+	private UserServiceImplementation userServiceImplementation;
+
+	@Autowired
+	private PostService postService;
 
 	@Override
 	public PagedResponse<Post> getAllPosts(int page, int size) {
@@ -96,17 +105,16 @@ public class PostServiceImpl implements PostService222 {
 	@Override
 	public PostResponse addPost(PostRequest postRequest, UserPrincipal currentUser) {
 		User user = userRepository.findById(currentUser.getId())
-				.orElseThrow(() -> new IllegalStateException("Resource not found"));
+				.orElseThrow(() -> new AppException("User not found"));
 
 		Post post = new Post();
 		post.setBody(postRequest.getBody());
 		post.setCaption(postRequest.getTitle());
 		post.setCreatedAt(Instant.now());
 		post.setUpdatedAt(Instant.now());
-		post.setCreatedBy(user.getFirstName()+" "+user.getLastName());
+		post.setCreatedBy(user.getId().toString());
 
 		post.setUser(user);
-
 
 		Post newPost = postRepository.save(post);
 
@@ -114,6 +122,7 @@ public class PostServiceImpl implements PostService222 {
 
 		postResponse.setTitle(newPost.getCaption());
 		postResponse.setBody(newPost.getBody());
+		postResponse.setStatus("POST CREATED!!!");
 
 		return postResponse;
 	}
@@ -122,6 +131,34 @@ public class PostServiceImpl implements PostService222 {
 	public Post getPost(Long id) {
 		return postRepository.findById(id).orElseThrow(() -> new IllegalStateException("Resource not found"));
 	}
+
+	@Override
+	@Transactional
+	public ResponseEntity<ApiResponse> addToFavorites(Long id, UserPrincipal currentUser){
+
+		Post post = postService.getPost(id);
+
+		if (post != null) {
+
+			User userbyId = userServiceImplementation.findById(currentUser.getId());
+			List<Post> favorites = userbyId.getFavorites();
+
+			Optional<Post> optionalPost = favorites.stream().filter(post1 -> post.equals(post1)).findFirst();
+
+			if(optionalPost.isPresent()) {
+				favorites.remove(post);
+				post.setUser(userbyId);
+				return ResponseEntity.ok(new ApiResponse(Boolean.TRUE, "Post REMOVED FROM favourites successfully"));
+			}
+
+			favorites.add(post);
+			post.setUser(userbyId);
+			return ResponseEntity.ok(new ApiResponse(Boolean.TRUE, "Post ADDED TO favourites successfully"));
+		}
+		return ResponseEntity.ok(new ApiResponse(Boolean.FALSE, "Could not add post to favourite"));
+
+	}
+
 
 	private void validatePageNumberAndSize(int page, int size) {
 		if (page < 0) {

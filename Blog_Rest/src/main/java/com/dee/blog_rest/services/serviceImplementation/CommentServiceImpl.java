@@ -1,6 +1,6 @@
 package com.dee.blog_rest.services.serviceImplementation;
 
-import com.dee.blog_rest.asecurity2.UserPrincipal;
+import com.dee.blog_rest.security.UserPrincipal;
 import com.dee.blog_rest.entities.Comment;
 import com.dee.blog_rest.entities.Post;
 import com.dee.blog_rest.entities.User;
@@ -8,7 +8,7 @@ import com.dee.blog_rest.entities.role.RoleName;
 import com.dee.blog_rest.exceptions.BadRequestException;
 import com.dee.blog_rest.exceptions.BlogapiException;
 import com.dee.blog_rest.repositories.CommentRepository;
-import com.dee.blog_rest.repositories.PostRepository222;
+import com.dee.blog_rest.repositories.PostRepository;
 import com.dee.blog_rest.repositories.UserRepository;
 import com.dee.blog_rest.requests_and_responses.ApiResponse;
 import com.dee.blog_rest.requests_and_responses.CommentRequest;
@@ -31,19 +31,13 @@ public class CommentServiceImpl implements CommentService {
 
 	private static final String YOU_DON_T_HAVE_PERMISSION_TO = "You don't have permission to ";
 
-	private static final String ID_STR = "id";
-
-	private static final String COMMENT_STR = "Comment";
-
-	private static final String POST_STR = "Post";
-
 	private static final String COMMENT_DOES_NOT_BELONG_TO_POST = "Comment does not belong to post";
 
 	@Autowired
 	private CommentRepository commentRepository;
 
 	@Autowired
-	private PostRepository222 postRepository;
+	private PostRepository postRepository;
 
 	@Autowired
 	private UserRepository userRepository;
@@ -52,11 +46,13 @@ public class CommentServiceImpl implements CommentService {
 	public PagedResponse<Comment> getAllComments(Long postId, int page, int size) {
 		validatePageNumberAndSize(page, size);
 		Pageable pageable = PageRequest.of(page, size, Sort.Direction.DESC, "createdAt");
+		if (postRepository.findById(postId).isPresent()) {
+			Page<Comment> comments = commentRepository.findByPostId(postId, pageable);
 
-		Page<Comment> comments = commentRepository.findByPostId(postId, pageable);
-
-		return new PagedResponse<>(comments.getContent(), comments.getNumber(), comments.getSize(),
-				comments.getTotalElements(), comments.getTotalPages(), comments.isLast());
+			return new PagedResponse<>(comments.getContent(), comments.getNumber(), comments.getSize(),
+					comments.getTotalElements(), comments.getTotalPages(), comments.isLast());
+		}
+		throw new BadRequestException("Could not find post with that id");
 	}
 
 	@Override
@@ -68,7 +64,7 @@ public class CommentServiceImpl implements CommentService {
 		comment.setBody(commentRequest.getBody());
 		comment.setUser(user);
 		comment.setPost(post);
-		comment.setCreatedBy(user.getFirstName()+" "+user.getLastName());
+		comment.setCreatedBy(user.getId().toString());
 		comment.setCreatedAt(Instant.now());
 		comment.setUpdatedAt(Instant.now());
 		return commentRepository.save(comment);
@@ -83,7 +79,6 @@ public class CommentServiceImpl implements CommentService {
 		if (comment.getPost().getId().equals(post.getId())) {
 			return comment;
 		}
-
 		throw new BlogapiException(HttpStatus.BAD_REQUEST, COMMENT_DOES_NOT_BELONG_TO_POST);
 	}
 
@@ -98,13 +93,11 @@ public class CommentServiceImpl implements CommentService {
 		if (!comment.getPost().getId().equals(post.getId())) {
 			throw new BlogapiException(HttpStatus.BAD_REQUEST, COMMENT_DOES_NOT_BELONG_TO_POST);
 		}
-
 		if (comment.getUser().getId().equals(currentUser.getId())
-				|| currentUser.getAuthorities().contains(new IllegalStateException("Resource not found"))) {
+				|| currentUser.getAuthorities().contains(new SimpleGrantedAuthority(RoleName.ROLE_ADMIN.toString()))) {
 			comment.setBody(commentRequest.getBody());
 			return commentRepository.save(comment);
 		}
-
 		throw new BlogapiException(HttpStatus.UNAUTHORIZED, YOU_DON_T_HAVE_PERMISSION_TO + "update" + THIS_COMMENT);
 	}
 

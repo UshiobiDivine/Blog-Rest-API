@@ -1,13 +1,17 @@
 package com.dee.blog_rest.controller;
 
 import com.dee.blog_rest.entities.User;
+import com.dee.blog_rest.requests_and_responses.AddUserRequest;
 import com.dee.blog_rest.requests_and_responses.ApiResponse;
 import com.dee.blog_rest.requests_and_responses.UpdateUserRequest;
 import com.dee.blog_rest.requests_and_responses.UserDetailsResponse;
+import com.dee.blog_rest.security.CurrentUser;
+import com.dee.blog_rest.security.UserPrincipal;
 import com.dee.blog_rest.services.serviceImplementation.UserServiceImplementation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -20,8 +24,6 @@ import java.util.logging.Logger;
 @RequestMapping(path = "/api/users")
 public class UserController {
 
-    Logger logger = Logger.getLogger(UserController.class.getName());
-
     private UserServiceImplementation userServiceImplementation;
 
     @Autowired
@@ -31,6 +33,7 @@ public class UserController {
 
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public List<UserDetailsResponse> allUsers(){
         List<User> all = userServiceImplementation.findAll();
 
@@ -50,24 +53,19 @@ public class UserController {
     }
 
     @PutMapping(path = "{userId}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ApiResponse> updateUser(@PathVariable("userId") Long userId,
-                                                  @Valid @RequestBody UpdateUserRequest updateUserRequest){
-        if (userServiceImplementation.findById(userId)!=null){
+                                                  @Valid @RequestBody UpdateUserRequest updateUser,
+                                                  @CurrentUser UserPrincipal currentUser){
 
-            logger.info(updateUserRequest.getLastName()+" "+
-                    updateUserRequest.getFirstName()+" "+
-                    updateUserRequest.getLastName()+" "+
-                    updateUserRequest.getPassword()+" "+
-                    updateUserRequest.getEmail());
 
-            userServiceImplementation.updateUser(userId,updateUserRequest);
+            userServiceImplementation.updateUser(updateUser, userId, currentUser);
             return ResponseEntity.ok(new ApiResponse(Boolean.TRUE, "User details updated successfully"));
-        }
-        return (ResponseEntity<ApiResponse>) ResponseEntity.notFound();
 
     }
 
     @GetMapping(path = "{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<User> getUser(@PathVariable("userId") Long userId){
 
         User user = userServiceImplementation.findById(userId);
@@ -79,18 +77,36 @@ public class UserController {
     }
 
 
-    @Scheduled(initialDelay = 1000 * 10, fixedDelay=Long.MAX_VALUE)
     @DeleteMapping(path = "{userId}")
-    public ResponseEntity<ApiResponse> deleteUser(@PathVariable("userId") Long userId){
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> deleteUser(@PathVariable("userId") Long userId, @CurrentUser UserPrincipal currentUser){
 
-        User user = userServiceImplementation.findById(userId);
-        Optional<User> user1 = Optional.ofNullable(user);
-        if (user1.isPresent()){
-            boolean b = userServiceImplementation.deleteUser(userId);
-            if(b)
-                return ResponseEntity.ok(new ApiResponse(Boolean.TRUE, "User account deleted!!!"));
-        }
-        return ResponseEntity.ok(new ApiResponse(Boolean.FALSE, "Can't delete account"));
+            ApiResponse res = userServiceImplementation.deleteUser(userId, currentUser);
+            return ResponseEntity.ok(res);
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<User> addUser(@Valid @RequestBody AddUserRequest user) {
+        User newUser = userServiceImplementation.addUser(user);
+
+        return new ResponseEntity< >(newUser, HttpStatus.CREATED);
+    }
+
+    @PutMapping("/giveAdmin/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> giveAdmin(@PathVariable(name = "userId") Long userId) {
+        ApiResponse apiResponse = userServiceImplementation.giveAdmin(userId);
+
+        return new ResponseEntity< >(apiResponse, HttpStatus.OK);
+    }
+
+    @PutMapping("/takeAdmin/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> takeAdmin(@PathVariable(name = "userId") Long userId) {
+        ApiResponse apiResponse = userServiceImplementation.removeAdmin(userId);
+
+        return new ResponseEntity< >(apiResponse, HttpStatus.OK);
     }
 
 }

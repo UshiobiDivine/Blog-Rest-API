@@ -1,7 +1,7 @@
 package com.dee.blog_rest.controller;
 
-import com.dee.blog_rest.asecurity2.CurrentUser;
-import com.dee.blog_rest.asecurity2.UserPrincipal;
+import com.dee.blog_rest.security.CurrentUser;
+import com.dee.blog_rest.security.UserPrincipal;
 import com.dee.blog_rest.entities.Comment;
 import com.dee.blog_rest.requests_and_responses.ApiResponse;
 import com.dee.blog_rest.requests_and_responses.CommentRequest;
@@ -39,7 +39,8 @@ public class CommentController {
 	@PostMapping
 	@PreAuthorize("hasRole('USER')")
 	public ResponseEntity<Comment> addComment(@Valid @RequestBody CommentRequest commentRequest,
-			@PathVariable(name = "postId") Long postId, @CurrentUser UserPrincipal currentUser) {
+											  @PathVariable(name = "postId") Long postId,
+											  @CurrentUser UserPrincipal currentUser) {
 		Comment newComment = commentService.addComment(commentRequest, postId, currentUser);
 
 		return new ResponseEntity<>(newComment, HttpStatus.CREATED);
@@ -47,7 +48,7 @@ public class CommentController {
 
 	@GetMapping("/{id}")
 	public ResponseEntity<Comment> getComment(@PathVariable(name = "postId") Long postId,
-			@PathVariable(name = "id") Long id) {
+											  @PathVariable(name = "id") Long id) {
 		Comment comment = commentService.getComment(postId, id);
 
 		return new ResponseEntity<>(comment, HttpStatus.OK);
@@ -56,8 +57,9 @@ public class CommentController {
 	@PutMapping("/{id}")
 	@PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
 	public ResponseEntity<Comment> updateComment(@PathVariable(name = "postId") Long postId,
-			@PathVariable(name = "id") Long id, @Valid @RequestBody CommentRequest commentRequest,
-			@CurrentUser UserPrincipal currentUser) {
+												 @PathVariable(name = "id") Long id,
+												 @Valid @RequestBody CommentRequest commentRequest,
+												 @CurrentUser UserPrincipal currentUser) {
 
 		Comment updatedComment = commentService.updateComment(postId, id, commentRequest, currentUser);
 
@@ -67,13 +69,15 @@ public class CommentController {
 	@DeleteMapping("/{id}")
 	@PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
 	public ResponseEntity<ApiResponse> deleteComment(@PathVariable(name = "postId") Long postId,
-													 @PathVariable(name = "id") Long id, @CurrentUser UserPrincipal currentUser) {
+													 @PathVariable(name = "id") Long id,
+													 @CurrentUser UserPrincipal currentUser) {
 
 		ApiResponse response = commentService.deleteComment(postId, id, currentUser);
 
 		HttpStatus status = response.getSuccess() ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
 
 		return new ResponseEntity<>(response, status);
+
 	}
 
 	@PostMapping("{id}")

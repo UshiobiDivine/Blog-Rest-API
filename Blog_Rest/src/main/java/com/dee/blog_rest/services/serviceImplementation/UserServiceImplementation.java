@@ -1,17 +1,27 @@
 package com.dee.blog_rest.services.serviceImplementation;
 
 import com.dee.blog_rest.entities.User;
+import com.dee.blog_rest.entities.role.Role;
+import com.dee.blog_rest.entities.role.RoleName;
+import com.dee.blog_rest.exceptions.AccessDeniedException;
+import com.dee.blog_rest.exceptions.AppException;
 import com.dee.blog_rest.exceptions.BadRequestException;
+import com.dee.blog_rest.exceptions.UnauthorizedException;
+import com.dee.blog_rest.repositories.RoleRepository;
 import com.dee.blog_rest.repositories.UserRepository;
+import com.dee.blog_rest.requests_and_responses.AddUserRequest;
 import com.dee.blog_rest.requests_and_responses.ApiResponse;
 import com.dee.blog_rest.requests_and_responses.SignUpRequest;
 import com.dee.blog_rest.requests_and_responses.UpdateUserRequest;
+import com.dee.blog_rest.security.UserPrincipal;
 import com.dee.blog_rest.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,65 +31,44 @@ import java.util.Optional;
 public class UserServiceImplementation implements UserService {
 
     private UserRepository userRepository;
+    RoleRepository roleRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    public UserServiceImplementation(UserRepository userRepository) {
+    public UserServiceImplementation(UserRepository userRepository, RoleRepository roleRepository) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
     }
 
-//
-//    @Override
-//    public boolean saveUser(User user) {
-//
-//        Timestamp timestamp = Timestamp.valueOf(LocalDateTime.now());
-//        user.setDateOpened(timestamp);
-//        User save = userRepository.save(user);
-//        if (save!=null){
-//            return true;
-//        }
-//        return false;
-//
-//
-//
-//        if (userRepository.findByEmail(user.getEmail())!=null) {
-//            ApiResponse apiResponse = new ApiResponse(Boolean.FALSE, "Email is already taken");
-//            throw new BadRequestException(apiResponse);
-//        }
-//
-//        List<Role> roles = new ArrayList<>();
-//        roles.add(
-//                roleRepository.findByName(RoleName.ROLE_USER).orElseThrow(() -> new AppException("User role not set")));
-//        user.setRoles(roles);
-//
-//        user.setPassword(passwordEncoder.encode(user.getPassword()));
-//       User save = userRepository.save(user);
-//        if (save!=null){
-//            return true;
-//        }
-//        return false;
-//    }
-
     @Override
-    public User saveUser(SignUpRequest signUpRequest) {
-        User user = new User();
-        if (userRepository.findByEmail(signUpRequest.getEmail())!=null) {
-            ApiResponse apiResponse = new ApiResponse(Boolean.FALSE, "Email is already taken");
-            throw new BadRequestException(apiResponse.getMessage());
+    public User addUser(AddUserRequest user) {
+        if (userRepository.findByEmail(user.getEmail())!=null) {
+            ApiResponse apiResponse = new ApiResponse(Boolean.FALSE, "Username is already taken");
+            throw new BadRequestException(apiResponse);
         }
 
+        if (userRepository.existsByEmail(user.getEmail())) {
+            ApiResponse apiResponse = new ApiResponse(Boolean.FALSE, "Email is already taken");
+            throw new BadRequestException(apiResponse);
+        }
 
-        user.setEmail(signUpRequest.getEmail());
-        user.setLastName(signUpRequest.getLastName());
-        user.setFirstName(signUpRequest.getFirstName());
-        user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
-        user.setCreatedAt(Instant.now());
-        user.setUpdatedAt(Instant.now());
+        User user1 = new User();
+        user1.setEmail(user.getEmail());
+        user1.setLastName(user.getLastName());
+        user1.setFirstName(user.getFirstName());
+        user1.setPassword(passwordEncoder.encode(user.getPassword()));
+        user1.setCreatedAt(Instant.now());
+        user1.setUpdatedAt(Instant.now());
 
-        User save = userRepository.save(user);
-        return save;
+        List<Role> roles = new ArrayList<>();
+
+        roles.add(
+                roleRepository.findByName(RoleName.ROLE_USER).orElseThrow(() -> new AppException("User role not set")));
+        user1.setRoles(roles);
+
+        return userRepository.save(user1);
     }
 
     public  User findById(Long id){
@@ -98,42 +87,63 @@ public class UserServiceImplementation implements UserService {
 
     @Transactional
     @Override
-    public void updateUser(Long userId, UpdateUserRequest updateUserRequest) {
-        User user = userRepository.findById(userId).orElseThrow(()->
-                new IllegalStateException("Student with id " + userId + " does not exist"));
+    public User updateUser(UpdateUserRequest newUser, Long id, UserPrincipal currentUser) {
+        Optional<User> user = userRepository.findById(id);
+        if (user.get().getId().equals(currentUser.getId())
+                || currentUser.getAuthorities().contains(new SimpleGrantedAuthority(RoleName.ROLE_ADMIN.toString()))) {
+            User user1 = user.get();
+            user1.setFirstName(newUser.getFirstName());
+            user1.setLastName(newUser.getLastName());
+            user1.setPassword(passwordEncoder.encode(newUser.getPassword()));
+            user1.setUpdatedAt(Instant.now());
+            user1.setEmail(newUser.getEmail());
 
+            return userRepository.save(user1);
 
-        User user1 = userRepository.findByEmail(updateUserRequest.getEmail());
-        if (Optional.ofNullable(user1).isPresent()){
-            throw new IllegalStateException("email taken");
         }
-        user.setEmail(updateUserRequest.getEmail());
-        user.setUpdatedAt(Instant.now());
-        user.setPassword(updateUserRequest.getPassword());
-        user.setFirstName(updateUserRequest.getFirstName());
-        user.setLastName(updateUserRequest.getLastName());
 
-        System.out.println("USER UPDATED SUCCESSFULLY");
+        ApiResponse apiResponse = new ApiResponse(Boolean.FALSE, "You don't have permission to update profile of: " + user.get().getEmail());
+        throw new UnauthorizedException(apiResponse);
+
     }
 
-    @Override
-    public boolean userExist(String email) {
-        User byEmail = userRepository.findByEmail(email);
-        if (Optional.ofNullable(byEmail).isPresent()){
-            return true;
+
+    public ApiResponse deleteUser(Long id, UserPrincipal currentUser) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException("User with that id not found"));
+        if (!user.getId().equals(currentUser.getId()) || !currentUser.getAuthorities()
+                .contains(new SimpleGrantedAuthority(RoleName.ROLE_ADMIN.toString()))) {
+            ApiResponse apiResponse = new ApiResponse(Boolean.FALSE, "You don't have permission to delete profile of: " + user.getEmail());
+            throw new AccessDeniedException(apiResponse);
         }
-        return false;
+
+        userRepository.deleteById(user.getId());
+
+        return new ApiResponse(Boolean.TRUE, "You successfully deleted profile of: " + user.getEmail());
     }
 
-    @Override
-    public User findByMail(String email) {
-        return userRepository.findByEmail(email);
+
+    public ApiResponse giveAdmin(Long id) {
+        Optional<User> user = userRepository.findById(id);
+        List<Role> roles = new ArrayList<>();
+
+        roles.add(roleRepository.findByName(RoleName.ROLE_ADMIN)
+                .orElseThrow(() -> new AppException("User role not set")));
+        roles.add(
+                roleRepository.findByName(RoleName.ROLE_USER).orElseThrow(() -> new AppException("User role not set")));
+        user.get().setRoles(roles);
+        userRepository.save(user.get());
+        return new ApiResponse(Boolean.TRUE, "You gave ADMIN role to user: " + user.get().getEmail());
     }
 
-    @Override
-    public boolean deleteUser(Long userId) {
-        User user = userRepository.findById(userId).get();
-        userRepository.delete(user);
-        return true;
+
+    public ApiResponse removeAdmin(Long id) {
+        Optional<User> user = userRepository.findById(id);
+        List<Role> roles = new ArrayList<>();
+        roles.add(
+                roleRepository.findByName(RoleName.ROLE_USER).orElseThrow(() -> new AppException("User role not set")));
+        user.get().setRoles(roles);
+        userRepository.save(user.get());
+        return new ApiResponse(Boolean.TRUE, "You took ADMIN role from user: " + user.get().getEmail());
     }
 }

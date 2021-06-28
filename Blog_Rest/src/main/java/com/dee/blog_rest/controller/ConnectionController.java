@@ -1,15 +1,11 @@
 package com.dee.blog_rest.controller;
 
-import com.dee.blog_rest.asecurity2.CurrentUser;
-import com.dee.blog_rest.asecurity2.UserPrincipal;
-import com.dee.blog_rest.entities.NumberOfConnections;
+import com.dee.blog_rest.security.CurrentUser;
+import com.dee.blog_rest.security.UserPrincipal;
 import com.dee.blog_rest.entities.User;
 import com.dee.blog_rest.requests_and_responses.ApiResponse;
-import com.dee.blog_rest.requests_and_responses.ConnectionResponse;
-import com.dee.blog_rest.requests_and_responses.UserDetailsResponse;
 import com.dee.blog_rest.requests_and_responses.UsernameDetail;
 import com.dee.blog_rest.services.serviceImplementation.UserServiceImplementation;
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +21,6 @@ import java.util.logging.Logger;
 @RestController
 @RequestMapping(path = "/api/")
 public class ConnectionController {
-
 
     Logger logger = Logger.getLogger(UserController.class.getName());
 

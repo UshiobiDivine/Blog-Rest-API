@@ -39,6 +39,7 @@ public class User extends DateAudit {
     @Column
     private String password;
 
+
     @OneToMany(mappedBy = "user", cascade = ALL)
     private List<Post> posts;
 
@@ -46,15 +47,14 @@ public class User extends DateAudit {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments;
 
-
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostLike> postLikes;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentLike> commentLikes;
 
-//    @OneToMany(mappedBy = "user")
-//    List<Favourite> favourites;
 
     @JsonIgnore
     @ManyToMany(fetch = FetchType.EAGER)
@@ -67,18 +67,13 @@ public class User extends DateAudit {
             mappedBy = "user")
     private NumberOfConnections numberOfConnections;
 
-//    @OneToMany(mappedBy = "connectionFrom")
-//    List<Connections> following;
-//
-//    @OneToMany(mappedBy = "connectedTo")
-//    List<Connections> followers;
-
     @JsonIgnore
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_connection", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "connection_id", referencedColumnName = "id"))
     private List<User> connections;
 
+    @JsonIgnore
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"))

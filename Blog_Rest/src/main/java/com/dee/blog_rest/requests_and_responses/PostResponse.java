@@ -10,5 +10,6 @@ import java.util.List;
 public class PostResponse {
 	private String title;
 	private String body;
+	private  String status;
 
 }
