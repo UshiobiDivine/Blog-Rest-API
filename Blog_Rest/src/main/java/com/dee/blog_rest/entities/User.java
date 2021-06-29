@@ -12,6 +12,7 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 import java.util.List;
+import java.util.Set;
 
 import static javax.persistence.CascadeType.ALL;
 
@@ -39,7 +40,7 @@ public class User extends DateAudit {
     @Column
     private String password;
 
-
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = ALL)
     private List<Post> posts;
 
@@ -56,28 +57,22 @@ public class User extends DateAudit {
     private List<CommentLike> commentLikes;
 
 
+
     @JsonIgnore
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_favorite", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "post_id", referencedColumnName = "id"))
-    private List<Post> favorites;
+    private Set<Post> favorites;
 
-    @OneToOne(fetch = FetchType.LAZY,
-            cascade =  CascadeType.ALL,
-            mappedBy = "user")
-    private NumberOfConnections numberOfConnections;
 
-    @JsonIgnore
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_connection", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
-            inverseJoinColumns = @JoinColumn(name = "connection_id", referencedColumnName = "id"))
-    private List<User> connections;
-
-    @JsonIgnore
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"))
     private List<Role> roles;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "following", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Follow> allFollow;
 
     public User(String firstName, String lastName, String email, String password) {
         this.firstName = firstName;

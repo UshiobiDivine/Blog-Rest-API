@@ -59,6 +59,11 @@ public class PostServiceImpl implements PostService {
 	}
 
 	@Override
+	public ResponseEntity<ApiResponse> addToFavorites(Long id, UserPrincipal currentUser) {
+		return null;
+	}
+
+	@Override
 	public PagedResponse<Post> getPostsByCreatedBy(String email, int page, int size) {
 		validatePageNumberAndSize(page, size);
 		User user = userRepository.findByEmail(email);
@@ -132,32 +137,32 @@ public class PostServiceImpl implements PostService {
 		return postRepository.findById(id).orElseThrow(() -> new IllegalStateException("Resource not found"));
 	}
 
-	@Override
-	@Transactional
-	public ResponseEntity<ApiResponse> addToFavorites(Long id, UserPrincipal currentUser){
-
-		Post post = postService.getPost(id);
-
-		if (post != null) {
-
-			User userbyId = userServiceImplementation.findById(currentUser.getId());
-			List<Post> favorites = userbyId.getFavorites();
-
-			Optional<Post> optionalPost = favorites.stream().filter(post1 -> post.equals(post1)).findFirst();
-
-			if(optionalPost.isPresent()) {
-				favorites.remove(post);
-				post.setUser(userbyId);
-				return ResponseEntity.ok(new ApiResponse(Boolean.TRUE, "Post REMOVED FROM favourites successfully"));
-			}
-
-			favorites.add(post);
-			post.setUser(userbyId);
-			return ResponseEntity.ok(new ApiResponse(Boolean.TRUE, "Post ADDED TO favourites successfully"));
-		}
-		return ResponseEntity.ok(new ApiResponse(Boolean.FALSE, "Could not add post to favourite"));
-
-	}
+//	@Override
+//	@Transactional
+//	public ResponseEntity<ApiResponse> addToFavorites(Long id, UserPrincipal currentUser){
+//
+//		Post post = postService.getPost(id);
+//
+//		if (post != null) {
+//
+//			User userbyId = userServiceImplementation.findById(currentUser.getId());
+//			List<Post> favorites = userbyId.getFavorites();
+//
+//			Optional<Post> optionalPost = favorites.stream().filter(post1 -> post.equals(post1)).findFirst();
+//
+//			if(optionalPost.isPresent()) {
+//				favorites.remove(post);
+//				post.setUser(userbyId);
+//				return ResponseEntity.ok(new ApiResponse(Boolean.TRUE, "Post REMOVED FROM favourites successfully"));
+//			}
+//
+//			favorites.add(post);
+//			post.setUser(userbyId);
+//			return ResponseEntity.ok(new ApiResponse(Boolean.TRUE, "Post ADDED TO favourites successfully"));
+//		}
+//		return ResponseEntity.ok(new ApiResponse(Boolean.FALSE, "Could not add post to favourite"));
+//
+//	}
 
 
 	private void validatePageNumberAndSize(int page, int size) {

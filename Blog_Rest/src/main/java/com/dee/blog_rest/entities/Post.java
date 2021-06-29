@@ -11,6 +11,7 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 
 import static javax.persistence.CascadeType.ALL;
@@ -43,17 +44,21 @@ public class Post extends DateAudit {
     @OneToMany(mappedBy = "post", cascade = ALL)
     private List<PostLike> likes;
 
-    @JsonIgnore
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_favourites", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
-            inverseJoinColumns = @JoinColumn(name = "post_id", referencedColumnName = "id"))
-    private List<Favourite> favourites;
-
+//    @JsonIgnore
+//    @ManyToMany(fetch = FetchType.EAGER)
+//    @JoinTable(name = "user_favourites", joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
+//            inverseJoinColumns = @JoinColumn(name = "post_id", referencedColumnName = "id"))
+//    private List<Favourite> favourites;
 
     @JsonIgnore
     @OnDelete(action = OnDeleteAction.CASCADE)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @JsonIgnore
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @ManyToMany(mappedBy = "favorites", fetch = FetchType.LAZY)
+    private List<User> users = new ArrayList<>();
 
 }

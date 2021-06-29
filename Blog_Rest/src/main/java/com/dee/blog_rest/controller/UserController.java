@@ -45,7 +45,7 @@ public class UserController {
             userDetailsResponse.setDateCreated(user.getCreatedAt().toString());
             userDetailsResponse.setFirstName(user.getFirstName());
             userDetailsResponse.setLastName(user.getLastName());
-            userDetailsResponse.setTotalNumberOfConnections(user.getConnections().size());
+//            userDetailsResponse.setTotalNumberOfConnections(user.getConnections().size());
             userDetailsResponse.setTotalNumberOfPosts(user.getPosts().size());
             users.add(userDetailsResponse);
         });
